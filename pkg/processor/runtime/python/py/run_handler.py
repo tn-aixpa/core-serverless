@@ -12,45 +12,113 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import sys
 import json
+from pathlib import Path
+
+from digitalhub_runtime_python.utils.configuration import get_function_from_source
+from digitalhub_runtime_python.utils.inputs import get_inputs_parameters
+from digitalhub_runtime_python.utils.outputs import build_status
 
 import digitalhub as dh
-from digitalhub_core.entities._base.status import State
 
-def handler(context, event) -> None:
+
+def init_context(context) -> None:
     """
-    Handler for python function.
+    Initialize Nuclio context.
+
+    Parameters
+    ----------
+    context
+        The Nuclio context.
+
+    Returns
+    -------
+    None
     """
-    body = event.body
-    if isinstance(body, bytes):
-        body = json.loads(body)
-
-    project_name = body["project"]
-    run_id = body["id"]
-
-    context.logger.info(f"Running: {project_name} / {run_id}.")
-
-    # Get project and run
-    project = dh.get_project(project_name)
-    run = dh.get_run(project.name, run_id)
+    context.context.context.logger.info("Getting project and run.")
+    project = dh.get_project(context.project_id)
+    run = dh.get_run(project, context.run_id)
+    setattr(context, "project", project)
+    setattr(context, "run", run)
 
     context.logger.info("Installing run dependencies.")
     for requirement in run.spec.to_dict().get("requirements", []):
         context.logger.info(f"Installing {requirement}.")
         os.system(f"pip install {requirement}")
 
-    context.logger.info("Executing function.")
-    run.run()
 
-    if run.status.state == State.ERROR.value:
-        return context.Response(body=json.dumps(run.status),
-                            headers={},
-                            content_type='text/plain',
-                            status_code=500)
-    
-    context.logger.info("Done.")
-    return context.Response(body=json.dumps(run.status),
+def handler(context, event) -> None:
+    """
+    Nuclio handler for python function.
+    """
+
+    body = event.body
+    if isinstance(body, bytes):
+        body = json.loads(body)
+
+
+    context.logger.info("Starting task.")
+    spec: dict = event.body["spec"]
+    project: str = event.body["project"]
+
+    # Set root path
+    root_path = Path("digitalhub_runtime_python")
+    root_path.mkdir(parents=True, exist_ok=True)
+
+    # Set inputs
+    context.logger.info("Collecting inputs.")
+    try:
+        fnc_args = get_inputs_parameters(
+            spec.get("inputs", {}),
+            spec.get("parameters", {}),
+            root_path,
+        )
+    except Exception:
+        msg = "Something got wrong during input collection."
+        context.logger.info(msg)
+        return context.Response(body=msg,
+                                headers={},
+                                content_type='text/plain',
+                                status_code=500)
+
+    # Configure function by source
+    context.logger.info("Configuring execution.")
+    try:
+        fnc = get_function_from_source(root_path, spec.get("source", {}))
+    except Exception:
+        msg = "Something got wrong during function configuration."
+        context.logger.info(msg)
+        return context.Response(body=msg,
+                                headers={},
+                                content_type='text/plain',
+                                status_code=500)
+
+    # Execute function
+    context.logger.info("Executing run.")
+    try:
+        results = fnc(project, **fnc_args)
+    except Exception:
+        msg = "Something got wrong during function execution."
+        context.logger.info(msg)
+        return context.Response(body=msg,
+                                headers={},
+                                content_type='text/plain',
+                                status_code=500)
+
+    # Set run status
+    context.logger.info("Setting run status.")
+    status = build_status(
+        results,
+        spec.get("outputs", {}),
+        spec.get("values", {}),
+    )
+    context.run._set_status(status)
+    context.run.save(update=True)
+
+    # Done
+    context.context.logger.info("Done.")
+    return context.Response(body=json.dumps(status),
                             headers={},
                             content_type='text/plain',
                             status_code=200)
+
