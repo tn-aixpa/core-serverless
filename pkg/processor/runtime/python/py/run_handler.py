@@ -22,31 +22,6 @@ from digitalhub_runtime_python.utils.outputs import build_status
 import digitalhub as dh
 
 
-def init_context(context) -> None:
-    """
-    Initialize Nuclio context.
-
-    Parameters
-    ----------
-    context
-        The Nuclio context.
-
-    Returns
-    -------
-    None
-    """
-    context.context.context.logger.info("Getting project and run.")
-    project = dh.get_project(context.project_id)
-    run = dh.get_run(project, context.run_id)
-    setattr(context, "project", project)
-    setattr(context, "run", run)
-
-    context.logger.info("Installing run dependencies.")
-    for requirement in run.spec.to_dict().get("requirements", []):
-        context.logger.info(f"Installing {requirement}.")
-        os.system(f"pip install {requirement}")
-
-
 def handler(context, event) -> None:
     """
     Nuclio handler for python function.
@@ -56,10 +31,12 @@ def handler(context, event) -> None:
     if isinstance(body, bytes):
         body = json.loads(body)
 
+    setattr(context, "project", dh.get_project(body["project"]))
+    setattr(context, "run", dh.get_run(project, body["id"]))
 
     context.logger.info("Starting task.")
-    spec: dict = event.body["spec"]
-    project: str = event.body["project"]
+    spec: dict = body["spec"]
+    project: str = body["project"]
 
     # Set root path
     root_path = Path("digitalhub_runtime_python")

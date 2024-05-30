@@ -23,7 +23,13 @@ COPY --from=uhttpc /home/nuclio/bin/uhttpc /usr/local/bin/uhttpc
 # Using "python -m" to ensure the given interpreter has all dependencies installed in cases
 # .. where there is more than one python interpreter and global pip is attached to the other interpreter
 RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip --no-index --find-links /opt/nuclio/whl \
- && python -m pip install nuclio-sdk msgpack digitalhub digitalhub_core digitalhub_data digitalhub_ml digitalhub_ml_python --no-index --find-links /opt/nuclio/whl
+    && python -m pip install nuclio-sdk \
+                              msgpack \
+                              digitalhub \
+                              digitalhub_core \
+                              digitalhub_data \
+                              digitalhub_ml \
+                              digitalhub_runtime_python --no-index --find-links /opt/nuclio/whl
 
 # Readiness probe
 HEALTHCHECK --interval=1s --timeout=3s CMD /usr/local/bin/uhttpc --url http://127.0.0.1:8082/ready || exit 1
