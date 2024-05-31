@@ -32,7 +32,7 @@ def handler(context, event) -> None:
         body = json.loads(body)
 
     setattr(context, "project", dh.get_project(body["project"]))
-    setattr(context, "run", dh.get_run(project, body["id"]))
+    setattr(context, "run", dh.get_run(body["project"], body["id"]))
 
     context.logger.info("Starting task.")
     spec: dict = body["spec"]
