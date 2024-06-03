@@ -15,11 +15,31 @@ import os
 import json
 from pathlib import Path
 
+import digitalhub as dh
 from digitalhub_runtime_python.utils.configuration import get_function_from_source
 from digitalhub_runtime_python.utils.inputs import get_inputs_parameters
-from digitalhub_runtime_python.utils.outputs import build_status
+from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
-import digitalhub as dh
+
+def render_error(msg: str, context):
+    """
+    Render error messages.
+    """
+    context.logger.info(msg)
+    return context.Response(body=msg,
+                            headers={},
+                            content_type='text/plain',
+                            status_code=500)
+
+
+def init_context(context) -> None:
+    """
+    Set the context attributes.
+    """
+    project_name = os.getenv("PROJECT_NAME")
+    run_id = os.getenv("RUN_ID")
+    setattr(context, "project", dh.get_project(project_name))
+    setattr(context, "run", dh.get_run(project_name, run_id))
 
 
 def handler(context, event) -> None:
@@ -27,74 +47,99 @@ def handler(context, event) -> None:
     Nuclio handler for python function.
     """
 
+    ############################
+    # Initialize
+    #############################
     body = event.body
     if isinstance(body, bytes):
         body = json.loads(body)
-
-    setattr(context, "project", dh.get_project(body["project"]))
-    setattr(context, "run", dh.get_run(body["project"], body["id"]))
+    context.logger.info(f"Received event: {body}")
 
     context.logger.info("Starting task.")
     spec: dict = body["spec"]
     project: str = body["project"]
 
-    # Set root path
     root_path = Path("digitalhub_runtime_python")
     root_path.mkdir(parents=True, exist_ok=True)
 
+
+    ############################
     # Set inputs
-    context.logger.info("Collecting inputs.")
+    #############################
     try:
+        context.logger.info("Collecting inputs.")
         fnc_args = get_inputs_parameters(
             spec.get("inputs", {}),
             spec.get("parameters", {}),
             root_path,
         )
-    except Exception:
-        msg = "Something got wrong during input collection."
-        context.logger.info(msg)
-        return context.Response(body=msg,
-                                headers={},
-                                content_type='text/plain',
-                                status_code=500)
+    except Exception as e:
+        msg = f"Something got wrong during input collection. {e.args}"
+        return render_error(msg, context)
 
-    # Configure function by source
-    context.logger.info("Configuring execution.")
+
+    ############################
+    # Configure function
+    ############################
     try:
+        context.logger.info("Configuring execution.")
         fnc = get_function_from_source(root_path, spec.get("source", {}))
-    except Exception:
-        msg = "Something got wrong during function configuration."
-        context.logger.info(msg)
-        return context.Response(body=msg,
-                                headers={},
-                                content_type='text/plain',
-                                status_code=500)
+    except Exception as e:
+        msg = f"Something got wrong during function configuration. {e.args}"
+        return render_error(msg, context)
 
+
+    ############################
     # Execute function
-    context.logger.info("Executing run.")
+    ############################
     try:
-        results = fnc(project, **fnc_args)
-    except Exception:
-        msg = "Something got wrong during function execution."
-        context.logger.info(msg)
-        return context.Response(body=msg,
-                                headers={},
-                                content_type='text/plain',
-                                status_code=500)
+        context.logger.info("Executing run.")
+        if hasattr(fnc, '__wrapped__'):
+            results = fnc(project, **fnc_args)
+        else:
+            exec_result = fnc(**fnc_args)
+            results = parse_outputs(exec_result,
+                                    list(spec.get("outputs", {})),
+                                    list(spec.get("values", [])),
+                                    project)
+        context.logger.info(f"Output results: {results}")
+    except Exception as e:
+        msg = f"Something got wrong during function execution. {e.args}"
+        return render_error(msg, context)
 
+
+    ############################
     # Set run status
-    context.logger.info("Setting run status.")
-    status = build_status(
-        results,
-        spec.get("outputs", {}),
-        spec.get("values", {}),
-    )
-    context.run._set_status(status)
-    context.run.save(update=True)
+    ############################
+    try:
+        context.logger.info("Building run status.")
+        status = build_status(
+            results,
+            spec.get("outputs", {}),
+            spec.get("values", {}),
+        )
+    except Exception as e:
+        msg = f"Something got wrong during building run status. {e.args}"
+        return render_error(msg, context)
 
-    # Done
-    context.context.logger.info("Done.")
-    return context.Response(body=json.dumps(status),
+
+    ############################
+    # Set status
+    ############################
+    try:
+        context.logger.info(f"Setting new run status: {status}")
+        context.run._set_status(status)
+        context.run.save(update=True)
+    except Exception as e:
+        msg = f"Something got wrong during run status setting. {e.args}"
+        return render_error(msg, context)
+
+
+    ############################
+    # End
+    ############################
+    context.logger.info("Done.")
+    return context.Response(body="OK",
                             headers={},
                             content_type='text/plain',
                             status_code=200)
