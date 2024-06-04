@@ -30,6 +30,8 @@ RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip
                              GitPython>=3 \
                              digitalhub_runtime_python==0.5.0b8 --no-index --find-links /opt/nuclio/whl
 
+LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
+
 # Readiness probe
 HEALTHCHECK --interval=1s --timeout=3s CMD /usr/local/bin/uhttpc --url http://127.0.0.1:8082/ready || exit 1
 
