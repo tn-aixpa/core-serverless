@@ -13,12 +13,15 @@
 # limitations under the License.
 import os
 import json
+from importlib import reload
 from pathlib import Path
 
 import digitalhub as dh
+import digitalhub_runtime_python
 from digitalhub_runtime_python.utils.configuration import get_function_from_source
 from digitalhub_runtime_python.utils.inputs import get_inputs_parameters
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
+import pip._internal as pip
 
 
 def render_error(msg: str, context):
@@ -31,15 +34,31 @@ def render_error(msg: str, context):
                             content_type='text/plain',
                             status_code=500)
 
-
 def init_context(context) -> None:
     """
     Set the context attributes.
     """
+
+    context.logger.info("Initializing context...")
+
+    context.logger.info("Getting project and run.")
     project_name = os.getenv("PROJECT_NAME")
     run_id = os.getenv("RUN_ID")
-    setattr(context, "project", dh.get_project(project_name))
-    setattr(context, "run", dh.get_run(project_name, run_id))
+    project = dh.get_project(project_name)
+    run = dh.get_run(project_name, run_id)
+    run.spec.inputs = run.inputs(as_dict=True)
+
+    context.logger.info("Setting attributes.")
+    setattr(context, "project", project)
+    setattr(context, "run", run)
+
+    context.logger.info("Installing requirements.")
+    for req in run.spec.to_dict().get("requirements", []):
+        context.logger.info(f"Adding requirement: {req}")
+        pip.main(["install", req])
+
+    reload(dh)
+    reload(digitalhub_runtime_python)
 
 
 def handler(context, event) -> None:
@@ -57,6 +76,7 @@ def handler(context, event) -> None:
 
     context.logger.info("Starting task.")
     spec: dict = body["spec"]
+    spec["inputs"] = context.run.spec.to_dict().get("inputs", {})
     project: str = body["project"]
 
     root_path = Path("digitalhub_runtime_python")
