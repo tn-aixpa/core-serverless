@@ -13,11 +13,9 @@
 # limitations under the License.
 import os
 import json
-from importlib import reload
 from pathlib import Path
 
 import digitalhub as dh
-import digitalhub_runtime_python
 from digitalhub_runtime_python.utils.configuration import get_function_from_source
 from digitalhub_runtime_python.utils.inputs import get_inputs_parameters
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
@@ -56,10 +54,6 @@ def init_context(context) -> None:
     for req in run.spec.to_dict().get("requirements", []):
         context.logger.info(f"Adding requirement: {req}")
         pip.main(["install", req])
-
-    reload(dh)
-    reload(digitalhub_runtime_python)
-
 
 def handler(context, event) -> None:
     """
@@ -120,7 +114,6 @@ def handler(context, event) -> None:
             exec_result = fnc(**fnc_args)
             results = parse_outputs(exec_result,
                                     list(spec.get("outputs", {})),
-                                    list(spec.get("values", [])),
                                     project)
         context.logger.info(f"Output results: {results}")
     except Exception as e:
@@ -133,11 +126,7 @@ def handler(context, event) -> None:
     ############################
     try:
         context.logger.info("Building run status.")
-        status = build_status(
-            results,
-            spec.get("outputs", {}),
-            spec.get("values", {}),
-        )
+        status = build_status(results, spec.get("outputs", {}))
     except Exception as e:
         msg = f"Something got wrong during building run status. {e.args}"
         return render_error(msg, context)
