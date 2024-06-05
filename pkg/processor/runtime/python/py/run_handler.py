@@ -55,7 +55,13 @@ def init_context(context) -> None:
         context.logger.info(f"Adding requirement: {req}")
         pip.main(["install", req])
 
-def handler(context, event) -> None:
+    root_path = Path("digitalhub_runtime_python")
+    root_path.mkdir(parents=True, exist_ok=True)
+
+    setattr(context, "root_path", root_path)
+
+
+def handler_job(context, event) -> None:
     """
     Nuclio handler for python function.
     """
@@ -63,18 +69,14 @@ def handler(context, event) -> None:
     ############################
     # Initialize
     #############################
-    body = event.body
-    if isinstance(body, bytes):
-        body = json.loads(body)
+    if isinstance(event.body, bytes):
+        body = json.loads(event.body)
     context.logger.info(f"Received event: {body}")
 
     context.logger.info("Starting task.")
     spec: dict = body["spec"]
     spec["inputs"] = context.run.spec.to_dict().get("inputs", {})
     project: str = body["project"]
-
-    root_path = Path("digitalhub_runtime_python")
-    root_path.mkdir(parents=True, exist_ok=True)
 
 
     ############################
@@ -85,7 +87,7 @@ def handler(context, event) -> None:
         fnc_args = get_inputs_parameters(
             spec.get("inputs", {}),
             spec.get("parameters", {}),
-            root_path,
+            context.root_path,
         )
     except Exception as e:
         msg = f"Something got wrong during input collection. {e.args}"
@@ -97,7 +99,7 @@ def handler(context, event) -> None:
     ############################
     try:
         context.logger.info("Configuring execution.")
-        fnc = get_function_from_source(root_path, spec.get("source", {}))
+        fnc = get_function_from_source(context.root_path, spec.get("source", {}))
     except Exception as e:
         msg = f"Something got wrong during function configuration. {e.args}"
         return render_error(msg, context)
@@ -153,3 +155,28 @@ def handler(context, event) -> None:
                             content_type='text/plain',
                             status_code=200)
 
+
+def handler_serve(context, event) -> None:
+    """
+    Main function.
+    """
+    ############################
+    # Initialize
+    #############################
+    context.logger.info("Starting task.")
+    try:
+        context.logger.info("Configuring execution.")
+        fnc = get_function_from_source(context.root_path, context.run.spec.to_dict().get("source", {}))
+    except Exception as e:
+        msg = f"Something got wrong during function configuration. {e.args}"
+        return render_error(msg, context)
+
+    ############################
+    # Execute function
+    ############################
+    try:
+        context.logger.info("Executing run.")
+        return fnc(context, event)
+    except Exception as e:
+        msg = f"Something got wrong during function execution. {e.args}"
+        return render_error(msg, context)
