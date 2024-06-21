@@ -12,6 +12,13 @@ FROM ${NUCLIO_ONBUILD_IMAGE} as processor
 # From the base image
 FROM ${NUCLIO_BASE_IMAGE}
 
+RUN  python -m pip install nuclio-sdk \
+                           msgpack \
+                           pandas==2.1.4 \
+                           psycopg2-binary>=2.8 \
+                           GitPython>=3 \
+                           digitalhub_runtime_python==0.5.0b11
+
 # Copy required objects from the suppliers
 COPY --from=processor /home/nuclio/bin/processor /usr/local/bin/processor
 COPY --from=processor /home/nuclio/bin/py /opt/nuclio/
@@ -22,13 +29,9 @@ COPY --from=uhttpc /home/nuclio/bin/uhttpc /usr/local/bin/uhttpc
 # Install pip (if missing) + nuclio python sdk and its dependencies
 # Using "python -m" to ensure the given interpreter has all dependencies installed in cases
 # .. where there is more than one python interpreter and global pip is attached to the other interpreter
-RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip --no-index --find-links /opt/nuclio/whl \
-    && python -m pip install nuclio-sdk \
-                             msgpack \
-                             pandas==2.1.4 \
-                             psycopg2-binary>=2.8 \
-                             GitPython>=3 \
-                             digitalhub_runtime_python==0.5.0b8 --no-index --find-links /opt/nuclio/whl
+#RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip --no-index --find-links /opt/nuclio/whl \
+
+                             # --no-index --find-links /opt/nuclio/whl
 
 LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
 

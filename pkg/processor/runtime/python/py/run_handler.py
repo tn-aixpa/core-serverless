@@ -13,11 +13,11 @@
 # limitations under the License.
 import os
 import json
-from pathlib import Path
 
 import digitalhub as dh
+from digitalhub_core.context.builder import get_context
 from digitalhub_runtime_python.utils.configuration import get_function_from_source
-from digitalhub_runtime_python.utils.inputs import get_inputs_parameters
+from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 import pip._internal as pip
 
@@ -55,10 +55,10 @@ def init_context(context) -> None:
         context.logger.info(f"Adding requirement: {req}")
         pip.main(["install", req])
 
-    root_path = Path("digitalhub_runtime_python")
-    root_path.mkdir(parents=True, exist_ok=True)
+    root = get_context(project.name).root
+    root.mkdir(parents=True, exist_ok=True)
 
-    setattr(context, "root_path", root_path)
+    setattr(context, "root", root)
 
 
 def handler_job(context, event) -> None:
@@ -78,30 +78,33 @@ def handler_job(context, event) -> None:
     spec["inputs"] = context.run.spec.to_dict().get("inputs", {})
     project: str = body["project"]
 
-
-    ############################
-    # Set inputs
-    #############################
-    try:
-        context.logger.info("Collecting inputs.")
-        fnc_args = get_inputs_parameters(
-            spec.get("inputs", {}),
-            spec.get("parameters", {}),
-            context.root_path,
-        )
-    except Exception as e:
-        msg = f"Something got wrong during input collection. {e.args}"
-        return render_error(msg, context)
-
-
     ############################
     # Configure function
     ############################
     try:
         context.logger.info("Configuring execution.")
-        fnc = get_function_from_source(context.root_path, spec.get("source", {}))
+        fnc = get_function_from_source(context.root, spec.get("source", {}))
     except Exception as e:
         msg = f"Something got wrong during function configuration. {e.args}"
+        return render_error(msg, context)
+
+
+    ############################
+    # Set inputs
+    #############################
+    try:
+        context.logger.info("Configuring function inputs.")
+        fnc_args = compose_inputs(
+            spec.get("inputs", {}),
+            spec.get("parameters", {}),
+            False,
+            fnc,
+            context.project,
+            context,
+            event,
+        )
+    except Exception as e:
+        msg = f"Something got wrong during function inputs configuration. {e.args}"
         return render_error(msg, context)
 
 
@@ -139,7 +142,9 @@ def handler_job(context, event) -> None:
     ############################
     try:
         context.logger.info(f"Setting new run status: {status}")
-        context.run._set_status(status)
+        context.run.refresh()
+        new_status = {**status, **context.run.status.to_dict()}
+        context.run._set_status(new_status)
         context.run.save(update=True)
     except Exception as e:
         msg = f"Something got wrong during run status setting. {e.args}"
@@ -166,7 +171,7 @@ def handler_serve(context, event) -> None:
     context.logger.info("Starting task.")
     try:
         context.logger.info("Configuring execution.")
-        fnc = get_function_from_source(context.root_path, context.run.spec.to_dict().get("source", {}))
+        fnc = get_function_from_source(context.root, context.run.spec.to_dict().get("source", {}))
     except Exception as e:
         msg = f"Something got wrong during function configuration. {e.args}"
         return render_error(msg, context)
