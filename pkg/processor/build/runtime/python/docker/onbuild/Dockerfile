@@ -32,10 +32,10 @@ FROM gcr.io/iguazio/python:3.9 as python39-builder
 COPY pkg/processor/runtime/python/py/requirements /requirements
 RUN pip download --dest /whl --exists-action i  --requirement /requirements/common.txt
 
-# # Supplies python 3.10 & common wheels
-# FROM gcr.io/iguazio/python:3.10 as python310-builder
-# COPY pkg/processor/runtime/python/py/requirements /requirements
-# RUN pip download --dest /whl --exists-action i  --requirement /requirements/common.txt
+# Supplies python 3.10 & common wheels
+FROM gcr.io/iguazio/python:3.10 as python310-builder
+COPY pkg/processor/runtime/python/py/requirements /requirements
+RUN pip download --dest /whl --exists-action i  --requirement /requirements/common.txt
 
 # # Supplies python 3.11 & common wheels
 # FROM gcr.io/iguazio/python:3.11 as python311-builder
@@ -55,5 +55,5 @@ COPY --from=processor /home/nuclio/bin/processor /home/nuclio/bin/processor
 # COPY --from=python37-builder /whl /home/nuclio/bin/py3.7-whl
 # COPY --from=python38-builder /whl /home/nuclio/bin/py3.8-whl
 COPY --from=python39-builder /whl /home/nuclio/bin/py3.9-whl
-# COPY --from=python310-builder /whl /home/nuclio/bin/py3.10-whl
+COPY --from=python310-builder /whl /home/nuclio/bin/py3.10-whl
 # COPY --from=python311-builder /whl /home/nuclio/bin/py3.11-whl
