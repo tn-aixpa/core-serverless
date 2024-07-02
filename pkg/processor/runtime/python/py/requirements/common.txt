@@ -1,4 +1,4 @@
-digitalhub_runtime_python==0.6.0b1
+digitalhub_runtime_python>=0.6.0b
 pandas==2.1.4
 psycopg2-binary~=2.8
 GitPython>=3
