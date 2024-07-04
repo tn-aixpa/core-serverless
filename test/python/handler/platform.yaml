@@ -1,4 +1,0 @@
-webAdmin:
-  enabled: false
-healthCheck:
-  enabled: false

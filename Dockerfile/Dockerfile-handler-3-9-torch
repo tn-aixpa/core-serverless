@@ -1,13 +1,13 @@
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
 ARG NUCLIO_BASE_IMAGE=pytorch/pytorch:latest
-ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/handler-builder-python-onbuild:latest-amd64
+ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.9
 
 # Supplies processor uhttpc, used for healthcheck
 FROM nuclio/uhttpc:0.0.1-amd64 as uhttpc
 
 # Supplies processor binary, wrapper
-FROM ${NUCLIO_ONBUILD_IMAGE} as processor
+FROM ${NUCLIO_ONBUILD_IMAGE} AS processor
 
 # From the base image
 FROM ${NUCLIO_BASE_IMAGE}
@@ -22,11 +22,8 @@ COPY --from=uhttpc /home/nuclio/bin/uhttpc /usr/local/bin/uhttpc
 # Install pip (if missing) + nuclio python sdk and its dependencies
 # Using "python -m" to ensure the given interpreter has all dependencies installed in cases
 # .. where there is more than one python interpreter and global pip is attached to the other interpreter
-RUN pip install psycopg2-binary GitPython
-RUN pip install pandas==2.1.4
-RUN pip install digitalhub_runtime_python==0.5.0b8
-RUN python -m pip install nuclio-sdk \
-                          msgpack  --no-index --find-links /opt/nuclio/whl
+RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip --no-index --find-links /opt/nuclio/whl \
+    && python -m pip install -r /opt/nuclio/requirements/common.txt && python -m pip install -r /opt/nuclio/requirements/python3_9.txt
 
 LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
 
