@@ -16,15 +16,10 @@ import json
 
 import digitalhub as dh
 from digitalhub_core.context.builder import get_context
-from digitalhub_runtime_python.utils.configuration import get_function_from_source
+from digitalhub_runtime_python.utils.configuration import get_function_from_source, get_init_function
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 import pip._internal as pip
-
-from pathlib import Path
-from typing import Callable
-from digitalhub_core.utils.logger import LOGGER
-from digitalhub_runtime_python.utils.configuration import save_function_source, parse_handler, import_function
 
 
 def render_error(msg: str, context):
@@ -37,29 +32,6 @@ def render_error(msg: str, context):
                             content_type='text/plain',
                             status_code=500)
 
-
-def get_init_function(path: Path, source_spec: dict) -> Callable:
-    """
-    Get function from source.
-
-    Parameters
-    ----------
-    path : Path
-        Path where to save the function source.
-    source_spec : dict
-        Funcrion source spec.
-
-    Returns
-    -------
-    Callable
-        Function.
-    """
-    if "init_function" not in source_spec:
-        return
-    function_code = save_function_source(path, source_spec)
-    handler_path, _ = parse_handler(source_spec["handler"])
-    function_path = (function_code / handler_path).with_suffix(".py")
-    return import_function(function_path, source_spec["init_function"])
 
 def init_context(context) -> None:
     """
@@ -89,13 +61,10 @@ def init_context(context) -> None:
 
     setattr(context, "root", root)
 
-    try:
-        init_function = get_init_function(root, run.spec.to_dict().get("source", {}))
-        if init_function is not None:
-            init_function(context)
-    except Exception as e:
-        msg = f"Something got wrong during init function configuration. {e.args}"
-        return render_error(msg, context)
+    init_function = get_init_function(root, run.spec.to_dict().get("source", {}))
+    if init_function is not None:
+        init_function(context)
+
 
 def handler_job(context, event) -> None:
     """
