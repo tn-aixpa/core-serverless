@@ -44,7 +44,8 @@ def init_context(context) -> None:
     project_name = os.getenv("PROJECT_NAME")
     run_id = os.getenv("RUN_ID")
     project = dh.get_project(project_name)
-    run = dh.get_run(project_name, run_id)
+    run_key = f"store://{project.name}/runs/run+python/{run_id}"
+    run = dh.get_run(run_key)
     run.spec.inputs = run.inputs(as_dict=True)
 
     context.logger.info("Setting attributes.")
