@@ -11,67 +11,110 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import json
+import os
+from typing import Any
 
 import digitalhub as dh
 from digitalhub_core.context.builder import get_context
-from digitalhub_runtime_python.utils.configuration import get_function_from_source, get_init_function
+from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
-import pip._internal as pip
 
 
-def render_error(msg: str, context):
+def render_error(msg: str, context) -> Any:
     """
     Render error messages.
+
+    Parameters
+    ----------
+    msg : str
+        Error message.
+    context
+        Nuclio context.
+
+    Returns
+    -------
+    Any
+        User function response.
     """
     context.logger.info(msg)
-    return context.Response(body=msg,
-                            headers={},
-                            content_type='text/plain',
-                            status_code=500)
+    return context.Response(body=msg, headers={}, content_type="text/plain", status_code=500)
+
 
 
 def init_context(context) -> None:
     """
     Set the context attributes.
-    """
+    Collect project, run and functions.
 
+    Parameters
+    ----------
+    context
+        Nuclio context.
+
+    Returns
+    -------
+    None
+    """
     context.logger.info("Initializing context...")
 
-    context.logger.info("Getting project and run.")
+    # Get project
     project_name = os.getenv("PROJECT_NAME")
-    run_id = os.getenv("RUN_ID")
     project = dh.get_project(project_name)
+
+    # Set root directory from context
+    root = get_context(project.name).root
+    root.mkdir(parents=True, exist_ok=True)
+
+    # Get run
+    run_id = os.getenv("RUN_ID")
     run_key = f"store://{project.name}/runs/run+python/{run_id}"
     run = dh.get_run(run_key)
+
+    # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
 
-    context.logger.info("Setting attributes.")
+    # Get function (and eventually init) to execute and
+    # set it in the context
+    func, init_function = import_function_and_init(run.spec.to_dict().get("source"))
+
+    # Set attributes
     setattr(context, "project", project)
     setattr(context, "run", run)
+    setattr(context, "user_function", func)
+    setattr(context, "root", root)
 
+    # Execute user init function
+    if init_function is not None:
+        context.logger.info("Execute user init function.")
+        init_function(context)
+
+    context.logger.info("Context initialized.")
+
+    import pip._internal as pip
     context.logger.info("Installing requirements.")
     for req in run.spec.to_dict().get("requirements", []):
         context.logger.info(f"Adding requirement: {req}")
         pip.main(["install", req])
 
-    root = get_context(project.name).root
-    root.mkdir(parents=True, exist_ok=True)
 
-    setattr(context, "root", root)
-
-    init_function = get_init_function(root, run.spec.to_dict().get("source", {}))
-    if init_function is not None:
-        init_function(context)
-
-
-def handler_job(context, event) -> None:
+def handler_job(context, event) -> Any:
     """
     Nuclio handler for python function.
-    """
 
+    Parameters
+    ----------
+    context
+        Nuclio context.
+    event : Event
+        Nuclio event.
+
+    Returns
+    -------
+    Response
+        Response.
+    """
     ############################
     # Initialize
     #############################
@@ -85,26 +128,15 @@ def handler_job(context, event) -> None:
     project: str = body["project"]
 
     ############################
-    # Configure function
-    ############################
-    try:
-        context.logger.info("Configuring execution.")
-        fnc = get_function_from_source(context.root, spec.get("source", {}))
-    except Exception as e:
-        msg = f"Something got wrong during function configuration. {e.args}"
-        return render_error(msg, context)
-
-
-    ############################
     # Set inputs
     #############################
     try:
         context.logger.info("Configuring function inputs.")
-        fnc_args = compose_inputs(
+        func_args = compose_inputs(
             spec.get("inputs", {}),
             spec.get("parameters", {}),
             False,
-            fnc,
+            context.user_function,
             context.project,
             context,
             event,
@@ -113,24 +145,20 @@ def handler_job(context, event) -> None:
         msg = f"Something got wrong during function inputs configuration. {e.args}"
         return render_error(msg, context)
 
-
     ############################
     # Execute function
     ############################
     try:
         context.logger.info("Executing run.")
-        if hasattr(fnc, '__wrapped__'):
-            results = fnc(project, **fnc_args)
+        if hasattr(context.user_function, "__wrapped__"):
+            results = context.user_function(project, **func_args)
         else:
-            exec_result = fnc(**fnc_args)
-            results = parse_outputs(exec_result,
-                                    list(spec.get("outputs", {})),
-                                    project)
+            exec_result = context.user_function(**func_args)
+            results = parse_outputs(exec_result, list(spec.get("outputs", {})), project)
         context.logger.info(f"Output results: {results}")
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
         return render_error(msg, context)
-
 
     ############################
     # Set run status
@@ -141,7 +169,6 @@ def handler_job(context, event) -> None:
     except Exception as e:
         msg = f"Something got wrong during building run status. {e.args}"
         return render_error(msg, context)
-
 
     ############################
     # Set status
@@ -156,38 +183,32 @@ def handler_job(context, event) -> None:
         msg = f"Something got wrong during run status setting. {e.args}"
         return render_error(msg, context)
 
-
     ############################
     # End
     ############################
     context.logger.info("Done.")
-    return context.Response(body="OK",
-                            headers={},
-                            content_type='text/plain',
-                            status_code=200)
+    return context.Response(body="OK", headers={}, content_type="text/plain", status_code=200)
 
 
-def handler_serve(context, event) -> None:
+def handler_serve(context, event):
     """
     Main function.
-    """
-    ############################
-    # Initialize
-    #############################
-    context.logger.info("Starting task.")
-    try:
-        context.logger.info("Configuring execution.")
-        fnc = get_function_from_source(context.root, context.run.spec.to_dict().get("source", {}))
-    except Exception as e:
-        msg = f"Something got wrong during function configuration. {e.args}"
-        return render_error(msg, context)
 
-    ############################
-    # Execute function
-    ############################
+    Parameters
+    ----------
+    context :
+        Nuclio context.
+    event :
+        Nuclio event
+
+    Returns
+    -------
+    Any
+        User function response.
+    """
     try:
-        context.logger.info("Executing run.")
-        return fnc(context, event)
+        context.logger.info("Calling user function.")
+        return context.user_function(context, event)
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
         return render_error(msg, context)

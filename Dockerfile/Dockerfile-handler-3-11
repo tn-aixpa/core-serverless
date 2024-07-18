@@ -4,7 +4,7 @@ ARG NUCLIO_BASE_IMAGE=python:3.11
 ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.11
 
 # Supplies processor uhttpc, used for healthcheck
-FROM nuclio/uhttpc:0.0.1-amd64 as uhttpc
+FROM nuclio/uhttpc:0.0.1-amd64 AS uhttpc
 
 # Supplies processor binary, wrapper
 FROM ${NUCLIO_ONBUILD_IMAGE} AS processor
