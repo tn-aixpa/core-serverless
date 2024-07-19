@@ -92,12 +92,6 @@ def init_context(context) -> None:
 
     context.logger.info("Context initialized.")
 
-    import pip._internal as pip
-    context.logger.info("Installing requirements.")
-    for req in run.spec.to_dict().get("requirements", []):
-        context.logger.info(f"Adding requirement: {req}")
-        pip.main(["install", req])
-
 
 def handler_job(context, event) -> Any:
     """
