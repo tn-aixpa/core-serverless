@@ -57,15 +57,15 @@ jobs:
       matrix:
         include:
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-9
-            image: ghcr.io/${{ github.repository_owner }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.9-${{ github.event.release.tag_name }}
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-10
-            image: ghcr.io/${{ github.repository_owner }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.10-${{ github.event.release.tag_name }}
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-11
-            image: ghcr.io/${{ github.repository_owner }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.11-${{ github.event.release.tag_name }}
             context: ./
     permissions:
