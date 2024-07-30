@@ -25,7 +25,7 @@ COPY --from=uhttpc /home/nuclio/bin/uhttpc /usr/local/bin/uhttpc
 RUN python /opt/nuclio/whl/$(basename /opt/nuclio/whl/pip-*.whl)/pip install pip --no-index --find-links /opt/nuclio/whl \
     && python -m pip install -r /opt/nuclio/requirements/common.txt && python -m pip install -r /opt/nuclio/requirements/python3_9.txt
 
-LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-core
+LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
 
 # Readiness probe
 HEALTHCHECK --interval=1s --timeout=3s CMD /usr/local/bin/uhttpc --url http://127.0.0.1:8082/ready || exit 1

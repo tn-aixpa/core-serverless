@@ -68,7 +68,6 @@ jobs:
             image: ghcr.io/${{ github.repository_owner }}/python-runtime
             tag: 3.11-${{ github.event.release.tag_name }}
             context: ./
-      max-parallel: 3
     permissions:
       contents: read
       packages: write

@@ -27,7 +27,7 @@ FROM ${SERVERLESS_DOCKER_REPO}/processor:${SERVERLESS_DOCKER_IMAGE_TAG} AS proce
 
 FROM ${NUCLIO_DOCKER_REPO}/handler-builder-python-onbuild:${NUCLIO_DOCKER_IMAGE_TAG}
 
-LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-core
+LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
 
 COPY pkg/processor/runtime/python/py /opt/nuclio
 
