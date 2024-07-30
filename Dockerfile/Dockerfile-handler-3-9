@@ -1,6 +1,6 @@
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
-ARG NUCLIO_BASE_IMAGE=python:3.9
+ARG NUCLIO_BASE_IMAGE=ghcr.io/scc-digitalhub/jupyter-3-9:0.6.0
 ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.9
 
 # Supplies processor uhttpc, used for healthcheck
