@@ -1,5 +1,5 @@
-digitalhub_runtime_python>=0.6.0b
-pandas==2.1.4
-psycopg2-binary~=2.8
-GitPython>=3
+digitalhub_core[full]>=0.7.0b
+digitalhub_data[pandas]>=0.7.0b
+digitalhub_runtime_python>=0.7.0b
 nuclio-sdk
+python-dotenv

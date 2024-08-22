@@ -17,8 +17,9 @@ from typing import Any
 
 import digitalhub as dh
 from digitalhub_core.context.builder import get_context
-from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
+from digitalhub_core.entities.entity_types import EntityTypes
 from digitalhub_runtime_python.utils.inputs import compose_inputs
+from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
 
@@ -40,7 +41,6 @@ def render_error(msg: str, context) -> Any:
     """
     context.logger.info(msg)
     return context.Response(body=msg, headers={}, content_type="text/plain", status_code=500)
-
 
 
 def init_context(context) -> None:
@@ -69,7 +69,7 @@ def init_context(context) -> None:
 
     # Get run
     run_id = os.getenv("RUN_ID")
-    run_key = f"store://{project.name}/runs/run+python/{run_id}"
+    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/run+python/{run_id}"
     run = dh.get_run(run_key)
 
     # Get inputs if they exist
