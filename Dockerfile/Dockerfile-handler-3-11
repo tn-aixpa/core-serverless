@@ -1,8 +1,9 @@
 ARG TAG_JP=0.7.0b0
+ARG GIT_TAG=
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
 ARG NUCLIO_BASE_IMAGE=ghcr.io/scc-digitalhub/jupyter-3-11:${TAG_JP}
-ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.11
+ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.11-${GIT_TAG}
 
 # Supplies processor uhttpc, used for healthcheck
 FROM nuclio/uhttpc:0.0.1-amd64 AS uhttpc
