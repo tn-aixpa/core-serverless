@@ -93,3 +93,4 @@ jobs:
           file: ${{ matrix.dockerfile }}
           tags: ${{ matrix.image }}:${{ matrix.tag }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: GIT_TAG=${{ matrix.tag }}
