@@ -15,14 +15,17 @@ jobs:
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-9
             image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.9-${{ github.event.release.tag_name }}
+            latest: 3.9-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-10
             image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.10-${{ github.event.release.tag_name }}
+            latest: 3.10-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-11
             image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.11-${{ github.event.release.tag_name }}
+            latest: 3.11-latest
             context: ./
     permissions:
       contents: read
@@ -47,7 +50,7 @@ jobs:
           context: ${{ matrix.context }}
           push: true
           file: ${{ matrix.dockerfile }}
-          tags: ${{ matrix.image }}:${{ matrix.tag }}
+          tags: ${{ matrix.image }}:${{ matrix.tag }},${{ matrix.image }}:${{ matrix.latest }}
           labels: ${{ steps.meta.outputs.labels }}
   build-and-push-image-handler:
     needs: build-and-push-image-build
@@ -59,14 +62,17 @@ jobs:
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-9
             image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.9-${{ github.event.release.tag_name }}
+            latest: 3.9-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-10
             image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.10-${{ github.event.release.tag_name }}
+            latest: 3.10-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-11
             image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.11-${{ github.event.release.tag_name }}
+            latest: 3.11-latest
             context: ./
     permissions:
       contents: read
@@ -91,6 +97,6 @@ jobs:
           context: ${{ matrix.context }}
           push: true
           file: ${{ matrix.dockerfile }}
-          tags: ${{ matrix.image }}:${{ matrix.tag }}
+          tags: ${{ matrix.image }}:${{ matrix.tag }},${{ matrix.image }}:${{ matrix.latest }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: GIT_TAG=${{ github.event.release.tag_name }}
