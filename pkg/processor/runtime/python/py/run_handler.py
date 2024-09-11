@@ -112,8 +112,9 @@ def handler_job(context, event) -> Any:
     ############################
     # Initialize
     #############################
+    body = event.body
     if isinstance(event.body, bytes):
-        body = json.loads(event.body)
+        body = json.loads(body)
     context.logger.info(f"Received event: {body}")
 
     context.logger.info("Starting task.")
@@ -200,9 +201,38 @@ def handler_serve(context, event):
     Any
         User function response.
     """
+    ############################
+    # Initialize
+    #############################
+    body = event.body
+    if isinstance(event.body, bytes):
+        body = json.loads(body)
+    if body is None:
+        body = {}
+    context.logger.info(f"Received event: {body}")
+
+    context.logger.info("Starting task.")
+
+    ############################
+    # Set inputs
+    #############################
+    try:
+        context.logger.info("Configuring function inputs.")
+        func_args = compose_inputs(
+            context.run.spec.to_dict().get("inputs", {}),
+            context.run.spec.to_dict().get("parameters", {}),
+            False,
+            context.user_function,
+            context.project,
+            context,
+            event,
+        )
+    except Exception as e:
+        msg = f"Something got wrong during function inputs configuration. {e.args}"
+        return render_error(msg, context)
     try:
         context.logger.info("Calling user function.")
-        return context.user_function(context, event)
+        return context.user_function(**func_args)
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
         return render_error(msg, context)
