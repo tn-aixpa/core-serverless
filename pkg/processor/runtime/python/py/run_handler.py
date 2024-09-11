@@ -113,7 +113,7 @@ def handler_job(context, event) -> Any:
     # Initialize
     #############################
     if isinstance(event.body, bytes):
-        body: dict = json.loads(body)
+        body: dict = json.loads(event.body)
     else:
         body: dict = event.body
     context.logger.info(f"Received event: {body}")
