@@ -112,9 +112,10 @@ def handler_job(context, event) -> Any:
     ############################
     # Initialize
     #############################
-    body = event.body
     if isinstance(event.body, bytes):
-        body = json.loads(body)
+        body: dict = json.loads(body)
+    else:
+        body: dict = event.body
     context.logger.info(f"Received event: {body}")
 
     context.logger.info("Starting task.")
@@ -202,25 +203,13 @@ def handler_serve(context, event):
         User function response.
     """
     ############################
-    # Initialize
-    #############################
-    body = event.body
-    if isinstance(event.body, bytes):
-        body = json.loads(body)
-    if body is None:
-        body = {}
-    context.logger.info(f"Received event: {body}")
-
-    context.logger.info("Starting task.")
-
-    ############################
     # Set inputs
     #############################
     try:
         context.logger.info("Configuring function inputs.")
         func_args = compose_inputs(
-            context.run.spec.to_dict().get("inputs", {}),
-            context.run.spec.to_dict().get("parameters", {}),
+            {},
+            {},
             False,
             context.user_function,
             context.project,
