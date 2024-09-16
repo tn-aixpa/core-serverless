@@ -69,7 +69,7 @@ def init_context(context) -> None:
 
     # Get run
     run_id = os.getenv("RUN_ID")
-    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/run+python/{run_id}"
+    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/python+run/{run_id}"
     run = dh.get_run(run_key)
 
     # Get inputs if they exist
