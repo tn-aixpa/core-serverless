@@ -16,7 +16,7 @@ import os
 from typing import Any
 
 import digitalhub as dh
-from digitalhub.context.builder import get_context
+from digitalhub.context.api import get_context
 from digitalhub.entities.utils.entity_types import EntityTypes
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
