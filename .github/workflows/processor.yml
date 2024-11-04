@@ -11,3 +11,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build the Docker image
         run: make processor
+      - name: Push tag
+        run: docker push ghcr.io/scc-digitalhub/digitalhub-serverless/processor:latest-amd64
+      - name: Clean up
+        run: docker rmi ghcr.io/scc-digitalhub/digitalhub-serverless/processor:latest-amd64
+      - name: Prune Docker
+        run: docker system prune -a -f
