@@ -9,6 +9,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the Docker image
         run: make processor
       - name: Push tag
