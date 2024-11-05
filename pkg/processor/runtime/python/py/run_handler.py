@@ -17,10 +17,11 @@ from typing import Any
 
 import digitalhub as dh
 from digitalhub.context.api import get_context
-from digitalhub.entities.utils.entity_types import EntityTypes
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
+from digitalhub_runtime_python.entities.run.python_run.builder import RunPythonRunBuilder
 
 
 def render_error(msg: str, context) -> Any:
@@ -69,7 +70,7 @@ def init_context(context) -> None:
 
     # Get run
     run_id = os.getenv("RUN_ID")
-    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/python+run/{run_id}"
+    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/{RunPythonRunBuilder().ENTITY_KIND}/{run_id}"
     run = dh.get_run(run_key)
 
     # Get inputs if they exist
@@ -147,10 +148,10 @@ def handler_job(context, event) -> Any:
     try:
         context.logger.info("Executing run.")
         if hasattr(context.user_function, "__wrapped__"):
-            results = context.user_function(project, **func_args)
+            results = context.user_function(project, context.run.key, **func_args)
         else:
             exec_result = context.user_function(**func_args)
-            results = parse_outputs(exec_result, list(spec.get("outputs", {})), project)
+            results = parse_outputs(exec_result, list(spec.get("outputs", {})), project, context.run.key)
         context.logger.info(f"Output results: {results}")
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
