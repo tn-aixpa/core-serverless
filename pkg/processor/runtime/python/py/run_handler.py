@@ -13,15 +13,17 @@
 # limitations under the License.
 import json
 import os
+import typing
 from typing import Any
 
 import digitalhub as dh
 from digitalhub.context.api import get_context
-from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub_runtime_python.utils.configuration import import_function_and_init
 from digitalhub_runtime_python.utils.inputs import compose_inputs
-from digitalhub_runtime_python.utils.nuclio_configuration import import_function_and_init
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
-from digitalhub_runtime_python.entities.run.python_run.builder import RunPythonRunBuilder
+
+if typing.TYPE_CHECKING:
+    from digitalhub_runtime_python.entities.run.python_run.entity import RunPythonRun
 
 
 def render_error(msg: str, context) -> Any:
@@ -69,9 +71,7 @@ def init_context(context) -> None:
     root.mkdir(parents=True, exist_ok=True)
 
     # Get run
-    run_id = os.getenv("RUN_ID")
-    run_key = f"store://{project.name}/{EntityTypes.RUN.value}/{RunPythonRunBuilder().ENTITY_KIND}/{run_id}"
-    run = dh.get_run(run_key)
+    run: RunPythonRun = dh.get_run(os.getenv("RUN_ID"), project=project)
 
     # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
