@@ -71,7 +71,7 @@ def init_context(context) -> None:
     root.mkdir(parents=True, exist_ok=True)
 
     # Get run
-    run: RunPythonRun = dh.get_run(os.getenv("RUN_ID"), project=project)
+    run: RunPythonRun = dh.get_run(os.getenv("RUN_ID"), project=project_name)
 
     # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
