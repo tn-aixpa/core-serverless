@@ -147,6 +147,7 @@ def handler_job(context, event) -> Any:
     ############################
     try:
         context.logger.info("Executing run.")
+        context.run._start_execution()
         if hasattr(context.user_function, "__wrapped__"):
             results = context.user_function(project, context.run.key, **func_args)
         else:
@@ -156,6 +157,8 @@ def handler_job(context, event) -> Any:
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
         return render_error(msg, context)
+    finally:
+        context.run._finish_execution()
 
     ############################
     # Set run status
@@ -221,8 +224,11 @@ def handler_serve(context, event):
         msg = f"Something got wrong during function inputs configuration. {e.args}"
         return render_error(msg, context)
     try:
+        context.run._start_execution()
         context.logger.info("Calling user function.")
         return context.user_function(**func_args)
     except Exception as e:
         msg = f"Something got wrong during function execution. {e.args}"
         return render_error(msg, context)
+    finally:
+        context.run._finish_execution()
