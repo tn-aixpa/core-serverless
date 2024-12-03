@@ -18,6 +18,7 @@ from typing import Any
 
 import digitalhub as dh
 from digitalhub.context.api import get_context
+from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub_runtime_python.utils.configuration import import_function_and_init
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
@@ -63,7 +64,7 @@ def init_context(context) -> None:
     context.logger.info("Initializing context...")
 
     # Get project
-    project_name = os.getenv("PROJECT_NAME")
+    project_name = os.getenv(RuntimeEnvVar.PROJECT.value)
     project = dh.get_project(project_name)
 
     # Set root directory from context
@@ -71,7 +72,7 @@ def init_context(context) -> None:
     root.mkdir(parents=True, exist_ok=True)
 
     # Get run
-    run: RunPythonRun = dh.get_run(os.getenv("RUN_ID"), project=project_name)
+    run: RunPythonRun = dh.get_run(os.getenv(RuntimeEnvVar.RUN_ID.value), project=project_name)
 
     # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
