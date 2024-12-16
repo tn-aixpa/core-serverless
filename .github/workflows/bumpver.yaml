@@ -20,9 +20,9 @@ jobs:
         run: |
           lib_name=${{ github.event.client_payload.lib_name }}
           lib_vers=${{ github.event.client_payload.lib_vers }}
-          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" Dockerfile-handler-3-9
-          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" Dockerfile-handler-3-10
-          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" Dockerfile-handler-3-11
+          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" ./Dockerfile/Dockerfile-handler-3-9
+          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" ./Dockerfile/Dockerfile-handler-3-10
+          sed -E -i "s/ver_${lib_name}=.+/ver_${lib_name}=${lib_vers}/1" ./Dockerfile/Dockerfile-handler-3-11
 
       # Commit modifications to Dockerfile
       - name: Commit changes
