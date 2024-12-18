@@ -20,7 +20,7 @@ from typing import Any
 import digitalhub as dh
 from digitalhub.context.api import get_context
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub_runtime_python.utils.configuration import import_function_and_init
+from digitalhub_runtime_python.utils.configuration import import_function_and_init_from_source
 from digitalhub_runtime_python.utils.inputs import compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
@@ -88,7 +88,7 @@ def init_context(context) -> None:
     # function source
     path = Path("/shared")
     source = run.spec.to_dict().get("source")
-    func, init_function = import_function_and_init(source, path, DEFAULT_PY_FILE)
+    func, init_function = import_function_and_init_from_source(path, source, DEFAULT_PY_FILE)
 
     # Set attributes
     setattr(context, "project", project)
