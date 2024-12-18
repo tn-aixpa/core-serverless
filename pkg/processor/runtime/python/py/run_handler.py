@@ -14,6 +14,7 @@
 import json
 import os
 import typing
+from pathlib import Path
 from typing import Any
 
 import digitalhub as dh
@@ -25,6 +26,9 @@ from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
 if typing.TYPE_CHECKING:
     from digitalhub_runtime_python.entities.run.python_run.entity import RunPythonRun
+
+
+DEFAULT_PY_FILE = "main.py"
 
 
 def render_error(msg: str, context) -> Any:
@@ -78,8 +82,13 @@ def init_context(context) -> None:
     run.spec.inputs = run.inputs(as_dict=True)
 
     # Get function (and eventually init) to execute and
-    # set it in the context
-    func, init_function = import_function_and_init(run.spec.to_dict().get("source"))
+    # set it in the context. Path refers to the working
+    # user dir (will be taken from run spec in the future),
+    # default_py_file filename is "main.py", source is the
+    # function source
+    path = Path("/shared")
+    source = run.spec.to_dict().get("source")
+    func, init_function = import_function_and_init(source, path, DEFAULT_PY_FILE)
 
     # Set attributes
     setattr(context, "project", project)
