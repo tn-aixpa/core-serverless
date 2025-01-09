@@ -13,17 +13,17 @@ jobs:
       matrix:
         include:
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-9
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-onbuild
+            image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.9-${{ github.event.release.tag_name }}
             latest: 3.9-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-10
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-onbuild
+            image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.10-${{ github.event.release.tag_name }}
             latest: 3.10-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-onbuild-3-11
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-onbuild
+            image: ghcr.io/${{ github.repository }}/python-onbuild
             tag: 3.11-${{ github.event.release.tag_name }}
             latest: 3.11-latest
             context: ./
@@ -60,17 +60,17 @@ jobs:
       matrix:
         include:
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-9
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.9-${{ github.event.release.tag_name }}
             latest: 3.9-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-10
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.10-${{ github.event.release.tag_name }}
             latest: 3.10-latest
             context: ./
           - dockerfile: ./Dockerfile/Dockerfile-handler-3-11
-            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python-runtime
+            image: ghcr.io/${{ github.repository }}/python-runtime
             tag: 3.11-${{ github.event.release.tag_name }}
             latest: 3.11-latest
             context: ./
