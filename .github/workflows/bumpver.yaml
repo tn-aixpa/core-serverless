@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.client_payload.sha }}
+          ref: ${{ github.event.client_payload.branch }}
 
       # Update Dockerfile line
       - name: Update Dockerfile
@@ -31,5 +31,5 @@ jobs:
           lib_vers=${{ github.event.client_payload.lib_vers }}
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git commit -a -m "bump: ${lib_name} to ${lib_vers}"
+          git commit -a -m "bump: bumpver ${lib_name} to ${lib_vers}"
           git push
