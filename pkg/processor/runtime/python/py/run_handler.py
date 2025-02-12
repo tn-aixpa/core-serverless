@@ -15,23 +15,24 @@ import json
 import os
 import typing
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import digitalhub as dh
 from digitalhub.context.api import get_context
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub_runtime_python.utils.configuration import import_function_and_init_from_source
-from digitalhub_runtime_python.utils.inputs import compose_inputs
+from digitalhub_runtime_python.utils.inputs import compose_inputs, compose_init
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
 if typing.TYPE_CHECKING:
+    from nuclio_sdk import Context, Event, Response
     from digitalhub_runtime_python.entities.run.python_run.entity import RunPythonRun
 
 
 DEFAULT_PY_FILE = "main.py"
 
 
-def render_error(msg: str, context) -> Any:
+def render_error(msg: str, context: Context) -> Response:
     """
     Render error messages.
 
@@ -39,7 +40,7 @@ def render_error(msg: str, context) -> Any:
     ----------
     msg : str
         Error message.
-    context
+    context: Context
         Nuclio context.
 
     Returns
@@ -51,14 +52,37 @@ def render_error(msg: str, context) -> Any:
     return context.Response(body=msg, headers={}, content_type="text/plain", status_code=500)
 
 
-def init_context(context) -> None:
+def execute_user_init(init_function: Callable, context: Context, run: RunPythonRun) -> None:
+    """
+    Execute user init function.
+
+    Parameters
+    ----------
+    init_function : Callable
+        User init function.
+    context : Context
+        Nuclio context.
+    run : RunPythonRun
+        Run entity.
+
+    Returns
+    -------
+    None
+    """
+    init_params: dict = run.spec.to_dict().get("init_parameters", {})
+    params = compose_init(init_function, context, init_params)
+    context.logger.info("Execute user init function.")
+    init_function(**params)
+
+
+def init_context(context: Context) -> None:
     """
     Set the context attributes.
     Collect project, run and functions.
 
     Parameters
     ----------
-    context
+    context : Context
         Nuclio context.
 
     Returns
@@ -98,19 +122,18 @@ def init_context(context) -> None:
 
     # Execute user init function
     if init_function is not None:
-        context.logger.info("Execute user init function.")
-        init_function(context)
+        execute_user_init(init_function, context, run)
 
     context.logger.info("Context initialized.")
 
 
-def handler_job(context, event) -> Any:
+def handler_job(context : Context, event: Event) -> Response:
     """
     Nuclio handler for python function.
 
     Parameters
     ----------
-    context
+    context : Context
         Nuclio context.
     event : Event
         Nuclio event.
@@ -200,15 +223,15 @@ def handler_job(context, event) -> Any:
     return context.Response(body="OK", headers={}, content_type="text/plain", status_code=200)
 
 
-def handler_serve(context, event):
+def handler_serve(context: Context, event: Event) -> Any:
     """
     Main function.
 
     Parameters
     ----------
-    context :
+    context : Context
         Nuclio context.
-    event :
+    event : Event
         Nuclio event
 
     Returns
