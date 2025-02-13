@@ -98,11 +98,15 @@ def init_context(context: Context) -> None:
     project = dh.get_project(project_name)
 
     # Set root directory from context
-    root = get_context(project.name).root
-    root.mkdir(parents=True, exist_ok=True)
+    ctx = get_context(project.name)
+    ctx.root.mkdir(parents=True, exist_ok=True)
 
     # Get run
     run: RunPythonRun = dh.get_run(os.getenv(RuntimeEnvVar.RUN_ID.value), project=project_name)
+
+    # Set running context
+    context.logger.info("Set running context.")
+    ctx.set_run(run.key)
 
     # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
@@ -120,7 +124,7 @@ def init_context(context: Context) -> None:
     setattr(context, "project", project)
     setattr(context, "run", run)
     setattr(context, "user_function", func)
-    setattr(context, "root", root)
+    setattr(context, "root", ctx.root)
 
     # Execute user init function
     if init_function is not None:
