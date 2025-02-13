@@ -34,26 +34,6 @@ if typing.TYPE_CHECKING:
 DEFAULT_PY_FILE = "main.py"
 
 
-def render_error(msg: str, context: Context) -> Response:
-    """
-    Render error messages.
-
-    Parameters
-    ----------
-    msg : str
-        Error message.
-    context: Context
-        Nuclio context.
-
-    Returns
-    -------
-    Any
-        User function response.
-    """
-    context.logger.info(msg)
-    return context.Response(body=msg, headers={}, content_type="text/plain", status_code=500)
-
-
 def execute_user_init(init_function: Callable, context: Context, run: RunPythonRun) -> None:
     """
     Execute user init function.
@@ -105,8 +85,8 @@ def init_context(context: Context) -> None:
     run: RunPythonRun = dh.get_run(os.getenv(RuntimeEnvVar.RUN_ID.value), project=project_name)
 
     # Set running context
-    context.logger.info("Set running context.")
-    ctx.set_run(run.key)
+    context.logger.info("Starting execution.")
+    run._start_execution()
 
     # Get inputs if they exist
     run.spec.inputs = run.inputs(as_dict=True)
@@ -178,15 +158,13 @@ def handler_job(context : Context, event: Event) -> Response:
             event,
         )
     except Exception as e:
-        msg = f"Something got wrong during function inputs configuration. {e.args}"
-        return render_error(msg, context)
+        raise e
 
     ############################
     # Execute function
     ############################
     try:
-        context.logger.info("Executing run.")
-        context.run._start_execution()
+        context.logger.info("Executing function.")
         if hasattr(context.user_function, "__wrapped__"):
             results = context.user_function(project, context.run.key, **func_args)
         else:
@@ -194,8 +172,7 @@ def handler_job(context : Context, event: Event) -> Response:
             results = parse_outputs(exec_result, list(spec.get("outputs", {})), project, context.run.key)
         context.logger.info(f"Output results: {results}")
     except Exception as e:
-        msg = f"Something got wrong during function execution. {e.args}"
-        return render_error(msg, context)
+        raise e
     finally:
         context.run._finish_execution()
 
@@ -206,8 +183,9 @@ def handler_job(context : Context, event: Event) -> Response:
         context.logger.info("Building run status.")
         status = build_status(results, spec.get("outputs", {}))
     except Exception as e:
-        msg = f"Something got wrong during building run status. {e.args}"
-        return render_error(msg, context)
+        raise e
+    finally:
+        context.run._finish_execution()
 
     ############################
     # Set status
@@ -219,8 +197,9 @@ def handler_job(context : Context, event: Event) -> Response:
         context.run._set_status(new_status)
         context.run.save(update=True)
     except Exception as e:
-        msg = f"Something got wrong during run status setting. {e.args}"
-        return render_error(msg, context)
+        raise e
+    finally:
+        context.run._finish_execution()
 
     ############################
     # End
@@ -260,14 +239,17 @@ def handler_serve(context: Context, event: Event) -> Any:
             event,
         )
     except Exception as e:
-        msg = f"Something got wrong during function inputs configuration. {e.args}"
-        return render_error(msg, context)
+        raise e
+    finally:
+        context.run._finish_execution()
+
+    ############################
+    # Call user function
+    ############################
     try:
-        context.run._start_execution()
         context.logger.info("Calling user function.")
         return context.user_function(**func_args)
     except Exception as e:
-        msg = f"Something got wrong during function execution. {e.args}"
-        return render_error(msg, context)
+        raise e
     finally:
         context.run._finish_execution()
