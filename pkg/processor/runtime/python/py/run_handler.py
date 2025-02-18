@@ -130,23 +130,10 @@ def handler_job(context : Context, event: Event) -> Response:
         Response.
     """
     ############################
-    # Initialize
-    #############################
-    if isinstance(event.body, bytes):
-        body: dict = json.loads(event.body)
-    else:
-        body: dict = event.body
-    context.logger.info(f"Received event: {body}")
-
-    context.logger.info("Starting task.")
-    spec: dict = body["spec"]
-    spec["inputs"] = context.run.spec.to_dict().get("inputs", {})
-    project: str = body["project"]
-
-    ############################
     # Set inputs
     #############################
     try:
+        spec: dict = context.run.spec.to_dict()
         context.logger.info("Configuring function inputs.")
         func_args = compose_inputs(
             spec.get("inputs", {}),
@@ -164,6 +151,7 @@ def handler_job(context : Context, event: Event) -> Response:
     # Execute function
     ############################
     try:
+        project: str = context.project.name
         context.logger.info("Executing function.")
         if hasattr(context.user_function, "__wrapped__"):
             results = context.user_function(project, context.run.key, **func_args)
