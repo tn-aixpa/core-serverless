@@ -22,12 +22,12 @@ import digitalhub as dh
 from digitalhub.context.api import get_context
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub_runtime_python.utils.configuration import import_function_and_init_from_source
-from digitalhub_runtime_python.utils.inputs import compose_inputs, compose_init
+from digitalhub_runtime_python.utils.inputs import compose_init, compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
 if typing.TYPE_CHECKING:
-    from nuclio_sdk import Context, Event, Response
     from digitalhub_runtime_python.entities.run.python_run.entity import RunPythonRun
+    from nuclio_sdk import Context, Event, Response
 
 
 DEFAULT_PY_FILE = "main.py"
@@ -112,7 +112,7 @@ def init_context(context: Context) -> None:
     context.logger.info("Context initialized.")
 
 
-def handler_job(context : Context, event: Event) -> Response:
+def handler_job(context: Context, event: Event) -> Response:
     """
     Nuclio handler for python function.
 
