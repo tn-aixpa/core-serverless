@@ -1,4 +1,4 @@
-ARG ver_jupyter=0.10.1
+ARG ver_jupyter=0.10.2
 ARG GIT_TAG=
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
