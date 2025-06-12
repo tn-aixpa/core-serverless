@@ -11,7 +11,7 @@ The current release is the supported version. Security fixes are released togeth
 
 If you discover a security vulnerability in this project, please do not open a public issue.
 
-Instead, report it privately by emailing us at dslab@fbk.eu. Include as much detail as possible to help us understand and address the issue quickly and responsibly.
+Instead, report it privately by emailing us at digitalhub@fbk.eu. Include as much detail as possible to help us understand and address the issue quickly and responsibly.
 
 ## Contributing
 
@@ -29,7 +29,7 @@ We appreciate contributions and help in improving the project!
 
 This project is developed and maintained by **DSLab – Fondazione Bruno Kessler**, with contributions from the open source community. A complete list of contributors is available in the project’s commit history and pull requests.
 
-For questions or inquiries, please contact: [dslab@fbk.eu](mailto:dslab@fbk.eu)
+For questions or inquiries, please contact: [digitalhub@fbk.eu](mailto:digitalhub@fbk.eu)
 
 ## Copyright and license
 
