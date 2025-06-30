@@ -3,7 +3,49 @@
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/scc-digitalhub/digitalhub-core/LICENSE) ![GitHub Release](https://img.shields.io/github/v/release/scc-digitalhub/digitalhub-serverless)
 ![Status](https://img.shields.io/badge/status-stable-gold)
 
-Nuclio "Serverless"-based framework for Job/serverless executions compatible with DH Core.
+Nuclio "Serverless"-based framework for Job/serverless executions compatible with DH Core. The product is a set of python images that can be used to run serverless jobs in a Kubernetes cluster.
+
+## Development
+
+See CONTRIBUTING for contribution instructions.
+
+### Build container images
+
+To build the container image, you need to:
+
+Clone the repository and navigate to the `digitalhub-serverless` directory. The build process consists of three main steps:
+
+- Build the processor image
+
+```bash
+make processor
+```
+
+- Build the onbuild image (chooses the Python version from 3.9, 3.10, or 3.11)
+
+```bash
+docker build -t python-onbuild-3-<ver> -f ./Dockerfile/Dockerfile-onbuild-3-<ver> .
+```
+
+- Build the runtime image
+
+```bash
+
+docker build -t python-runtime-3-<ver> -f ./Dockerfile/Dockerfile-handler-3-<ver> .
+```
+
+### Launch container
+
+To run the container, use the following command:
+
+```bash
+docker run -e PROJECT_NAME=<project-name> -e RUN_ID=<run-id> python-runtime-3-<ver>
+```
+
+Required environment variables:
+
+- `PROJECT`: The name of the project
+- `RUN_ID`: The ID of the run to execute
 
 ## Security Policy
 
