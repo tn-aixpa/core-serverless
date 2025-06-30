@@ -15,19 +15,19 @@ To build the container image, you need to:
 
 Clone the repository and navigate to the `digitalhub-serverless` directory. The build process consists of three main steps:
 
-- Build the processor image
+- Build the processor image (modify the `Makefile` file to change the SERVERLESS_DOCKER_REPO and SERVERLESS_CACHE_REPO variable to your Docker repository, e.g., `docker.io/yourusername`)
 
 ```bash
 make processor
 ```
 
-- Build the onbuild image (chooses the Python version from 3.9, 3.10, or 3.11)
+- Build the onbuild image (chooses the Python version from 3.9, 3.10, or 3.11. Modify the `Dockerfile/Dockerfile-onbuild-3-<ver>` file to change the SERVERLESS_DOCKER_REP variable to your Docker repository, e.g., `docker.io/yourusername`)
 
 ```bash
-docker build -t python-onbuild-3-<ver> -f ./Dockerfile/Dockerfile-onbuild-3-<ver> .
+docker build -t python-onbuild-3-<ver> -f ./Dockerfile/Dockerfile-onbuild-3-<ver> -e =<ver> .
 ```
 
-- Build the runtime image
+- Build the runtime image  (Modify the `Dockerfile/Dockerfile-handler-3-<ver>` file to change the NUCLIO_ONBUILD_IMAGE variable point to the onbuild image you just built, e.g., `python-onbuild-3-<ver>`)
 
 ```bash
 
