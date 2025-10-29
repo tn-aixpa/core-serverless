@@ -9,18 +9,22 @@ import typing
 from pathlib import Path
 from typing import Any, Callable
 
-import digitalhub as dh
 from digitalhub.context.api import get_context
+from digitalhub.entities.project.crud import get_project
+from digitalhub.entities.run.crud import get_run
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub_runtime_python.utils.configuration import import_function_and_init_from_source
+from digitalhub_runtime_python.utils.configuration import (
+    import_function_and_init_from_source,
+)
 from digitalhub_runtime_python.utils.inputs import compose_init, compose_inputs
 from digitalhub_runtime_python.utils.outputs import build_status, parse_outputs
 
 if typing.TYPE_CHECKING:
-    from digitalhub_runtime_python.entities.run.python_run.entity import RunPythonRun
+    from digitalhub_runtime_python.entities.run._base.entity import RunPythonRun
     from nuclio_sdk import Context, Event, Response
 
 
+DEFAULT_PATH = Path("/shared")
 DEFAULT_PY_FILE = "main.py"
 
 
@@ -36,10 +40,6 @@ def execute_user_init(init_function: Callable, context: Context, run: RunPythonR
         Nuclio context.
     run : RunPythonRun
         Run entity.
-
-    Returns
-    -------
-    None
     """
     init_params: dict = run.spec.to_dict().get("init_parameters", {})
     params = compose_init(init_function, context, init_params)
@@ -56,23 +56,19 @@ def init_context(context: Context) -> None:
     ----------
     context : Context
         Nuclio context.
-
-    Returns
-    -------
-    None
     """
     context.logger.info("Initializing context...")
 
     # Get project
     project_name = os.getenv(RuntimeEnvVar.PROJECT.value)
-    project = dh.get_project(project_name)
+    project = get_project(project_name)
 
     # Set root directory from context
     ctx = get_context(project.name)
     ctx.root.mkdir(parents=True, exist_ok=True)
 
     # Get run
-    run: RunPythonRun = dh.get_run(os.getenv(RuntimeEnvVar.RUN_ID.value), project=project_name)
+    run: RunPythonRun = get_run(os.getenv(RuntimeEnvVar.RUN_ID.value), project=project_name)
 
     # Set running context
     context.logger.info("Starting execution.")
@@ -86,9 +82,8 @@ def init_context(context: Context) -> None:
     # user dir (will be taken from run spec in the future),
     # default_py_file filename is "main.py", source is the
     # function source
-    path = Path("/shared")
     source = run.spec.to_dict().get("source")
-    func, init_function = import_function_and_init_from_source(path, source, DEFAULT_PY_FILE)
+    func, init_function = import_function_and_init_from_source(DEFAULT_PATH, source, DEFAULT_PY_FILE)
 
     # Set attributes
     setattr(context, "project", project)

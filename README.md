@@ -1,6 +1,6 @@
 # Digital Hub Serverless
 
-[![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/tn-aixpa/core-serverless/LICENSE) ![GitHub Release](https://img.shields.io/github/v/release/tn-aixpa/core-serverless)
+[![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/scc-digitalhub/digitalhub-core/LICENSE) ![GitHub Release](https://img.shields.io/github/v/release/scc-digitalhub/digitalhub-serverless)
 ![Status](https://img.shields.io/badge/status-stable-gold)
 
 Nuclio "Serverless"-based framework for Job/serverless executions compatible with DH Core. The product is a set of python images that can be used to run serverless jobs in a Kubernetes cluster.
@@ -21,17 +21,23 @@ Clone the repository and navigate to the `digitalhub-serverless` directory. The 
 make processor
 ```
 
-- Build the onbuild image (chooses the Python version from 3.9, 3.10, or 3.11. Modify the `Dockerfile/Dockerfile-onbuild-3-<ver>` file to change the SERVERLESS_DOCKER_REP variable to your Docker repository, e.g., `docker.io/yourusername`)
+- Build the base image (chooses the Python 3 version from 9, 10, 11 or 12)
 
 ```bash
-docker build -t python-onbuild-3-<ver> -f ./Dockerfile/Dockerfile-onbuild-3-<ver> -e =<ver> .
+docker build -t python-base-3-<ver> -f ./Dockerfile/Dockerfile-base-3-<ver> .
 ```
 
-- Build the runtime image  (Modify the `Dockerfile/Dockerfile-handler-3-<ver>` file to change the NUCLIO_ONBUILD_IMAGE variable point to the onbuild image you just built, e.g., `python-onbuild-3-<ver>`)
+- Build the onbuild image (Modify the `Dockerfile/Dockerfile-onbuild-3-<ver>` file to change the SERVERLESS_DOCKER_REP variable to your Docker repository, e.g., `docker.io/yourusername`)
+
+```bash
+docker build -t python-onbuild-3-<ver> -f ./Dockerfile/Dockerfile-onbuild-3-<ver> .
+```
+
+- Build the runtime image  (Modify the `Dockerfile/Dockerfile-handler-3-<ver>` file to change the NUCLIO_BASE_IMAGE and NUCLIO_ONBUILD_IMAGE variables that point to the base and onbuild image you just built, e.g., `python-onbuild-3-<ver>`)
 
 ```bash
 
-docker build -t python-runtime-3-<ver> -f ./Dockerfile/Dockerfile-handler-3-<ver> .
+docker build -t python-runtime-3-<ver> -f ./Dockerfile/Dockerfile-handler-3-<ver> --build-arg GIT_TAG=<some-tag> .
 ```
 
 ### Launch container

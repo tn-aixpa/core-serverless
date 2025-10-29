@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
 #
 # SPDX-License-Identifier: Apache-2.0
-ARG ver_jupyter=0.12.0
 ARG GIT_TAG=
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
-ARG NUCLIO_BASE_IMAGE=ghcr.io/scc-digitalhub/jupyter-3-10:${ver_jupyter}
+ARG NUCLIO_BASE_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-base:3.10-${GIT_TAG}
 ARG NUCLIO_ONBUILD_IMAGE=ghcr.io/scc-digitalhub/digitalhub-serverless/python-onbuild:3.10-${GIT_TAG}
 
 # Supplies processor uhttpc, used for healthcheck
