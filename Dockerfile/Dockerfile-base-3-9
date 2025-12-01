@@ -5,13 +5,13 @@ FROM python:3.9-slim
 
 LABEL org.opencontainers.image.source=https://github.com/scc-digitalhub/digitalhub-serverless
 
-ARG ver_sdk=0.14.0
-ARG ver_python=0.14.0
-ARG ver_container=0.14.0
-ARG ver_modelserve=0.14.0
-ARG ver_dbt=0.14.0
-ARG ver_kfp=0.14.1
-ARG ver_hera=0.14.0
+ARG ver_sdk=0.14.7
+ARG ver_python=0.14.2
+ARG ver_container=0.14.2
+ARG ver_modelserve=0.14.4
+ARG ver_dbt=0.14.2
+ARG ver_kfp=0.14.2
+ARG ver_hera=0.14.1
 ARG ver_flower=0.14.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
